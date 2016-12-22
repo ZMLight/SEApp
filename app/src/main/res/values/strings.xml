@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">SEAPP3</string>
+    <string name="edit_message">Enter Message</string>
+    <string name="enter_username">enter username</string>
+    <string name="enter_passwd">enter passwd</string>
+    <string name="button_send">Send</string>
+    <string name="button_login">Login</string>
+    <string name="button_register">Register</string>
+</resources>
