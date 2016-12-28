@@ -44,6 +44,7 @@ public class ItemView extends LinearLayout implements View.OnClickListener {
 
     public interface OnCommentListener {
         void onComment(int position);
+        void onLike(int position);
     }
 
     @Override
@@ -145,6 +146,10 @@ public class ItemView extends LinearLayout implements View.OnClickListener {
         }
     }
 
+    private void updateLike(String s) {
+        mCreatedAtView.setText(s);
+    }
+
     @Override
     public void onClick(View v) {
         int id = v.getId();
@@ -161,9 +166,13 @@ public class ItemView extends LinearLayout implements View.OnClickListener {
             }
         } else if (id == R.id.like) {
             //like
-            //TODO
-            if (mMorePopupWindow != null && mMorePopupWindow.isShowing()) {
-                mMorePopupWindow.dismiss();
+
+            if (mCommentListener != null) {
+                mCommentListener.onLike(mPosition);
+
+                if (mMorePopupWindow != null && mMorePopupWindow.isShowing()) {
+                    mMorePopupWindow.dismiss();
+                }
             }
         }
     }
@@ -174,5 +183,9 @@ public class ItemView extends LinearLayout implements View.OnClickListener {
 
     public void addComment() {
         updateComment();
+    }
+
+    public void addLike(String s) {
+        updateLike(s);
     }
 }

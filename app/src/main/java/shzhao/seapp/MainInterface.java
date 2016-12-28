@@ -6,10 +6,13 @@ import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,6 +25,26 @@ public class MainInterface extends AppCompatActivity {
     private String provider;
     private Location location;
     private int user_id;
+    private String userName;
+
+    Handler handler = new Handler()
+    {
+        @Override
+        public void handleMessage(Message msg)
+        {
+            if(msg.what == 0x123)
+            {
+                // 设置show组件显示服务器响应
+                dialog();
+            }
+            else if(msg.what == 0x121)
+            {
+            //fail
+            dialog2();
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,7 +52,7 @@ public class MainInterface extends AppCompatActivity {
 
         Intent intent = getIntent();
         user_id = intent.getIntExtra(Login.EXTRA_MESSAGE, 1);
-
+        userName = intent.getStringExtra("username");
         positionTextView = (TextView) findViewById(R.id.position_text_view);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         //获取所有可用的位置提供器
@@ -86,7 +109,9 @@ public class MainInterface extends AppCompatActivity {
     //设置positionTextView的值并显示
     private void showLocation(Location location) {
         String currentPosition = "latitude is " + location.getLatitude() +
-                "\n" + "longitude is " + location.getLongitude();
+                "\n" + "longitude is " + location.getLongitude() +
+                "\n" + "user_id is " + user_id +
+                "\n" + "username is " + userName;
         positionTextView.setText(currentPosition);
     }
 
@@ -110,17 +135,68 @@ public class MainInterface extends AppCompatActivity {
         intent.putExtra("latitude", i);
         intent.putExtra("longitude", j);
         intent.putExtra("user_id", user_id);
+        intent.putExtra("user_name", userName);
         startActivity(intent);
     }
 
     public void send_message(View view) {
         //send message
-        dialog();
+
+        new Thread()
+        {
+            @Override
+            public void run()
+            {
+                String response;
+                double li = location.getLatitude() * 100;
+                double lj = location.getLongitude() * 100;
+                int ii = (int) li;
+                int jj = (int) lj;
+                String addrName = "" + ii + "" + jj;
+                EditText message = (EditText) findViewById(R.id.sendmyownmessage);
+                String Mess = message.getText().toString();
+
+                String info = "addr="+addrName+"&longitude="+ii+"&latitude="+jj;
+                response = GetPostUtil.sendGet(
+                        "http://10.187.113.153:80/add_Addr.php"
+                        , info);
+                Mess = Mess.replaceAll(" ", "%20");
+                info = "comment="+Mess+"&addrname="+addrName+"&user="+userName;
+                response = GetPostUtil.sendGet(
+                        "http://10.187.113.153:80/add_Message.php"
+                        , info);
+                // 发送消息通知UI线程更新UI组件
+
+                if(response.contains("1"))
+                    handler.sendEmptyMessage(0x123);
+                else
+                    handler.sendEmptyMessage(0x121);
+
+            }
+        }.start();
     }
 
     protected void dialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainInterface.this);
         builder.setMessage("发送成功");
+
+        builder.setTitle("提示");
+
+        builder.setPositiveButton("确认", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+
+            }
+        });
+
+
+        builder.create().show();
+    }
+    protected void dialog2() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainInterface.this);
+        builder.setMessage("发送失败，请确认网络连接或者权限");
 
         builder.setTitle("提示");
 

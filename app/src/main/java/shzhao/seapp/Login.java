@@ -3,6 +3,8 @@ package shzhao.seapp;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -11,33 +13,77 @@ import android.widget.EditText;
 
 public class Login extends AppCompatActivity {
     public final static String EXTRA_MESSAGE = "shzhao.se_app.MainInterface";
-    public final static String USERNAME = "zhaoming";
-    public final static String PASSWD = "zm";
+    public String username;
+    public int user_id;
+
+    Handler handler = new Handler()
+    {
+        @Override
+        public void handleMessage(Message msg)
+        {
+            if(msg.what == 0x123)
+            {
+                // 设置show组件显示服务器响应
+                launchMainIntf();
+            }
+            else if(msg.what == 0x121)
+            {
+                dialog();
+            }
+        }
+    };
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+    }
 
-        Intent intent = getIntent();
+    public void launchMainIntf() {
+        Intent intent = new Intent(this, MainInterface.class);
+        intent.putExtra(EXTRA_MESSAGE, user_id);
+        intent.putExtra("username", username);
+        startActivity(intent);
     }
 
     public void confirm(View view) {
-        Intent intent = new Intent(this, MainInterface.class);
-        //Intent intent2 = new Intent(this, Notation1.class);
-        EditText eTUsername = (EditText) findViewById(R.id.Loginusername);
-        EditText eTPasswd = (EditText) findViewById(R.id.Loginpasswd);
-        String username = eTUsername.getText().toString();
-        String passwd = eTPasswd.getText().toString();
-        //Server myserver = new Server();
-        if(username.equals(USERNAME) && passwd.equals(PASSWD)) {/*myserver.check_user(username, passwd) > 0*/
-            int user_id = 1/*myserver.check_user(username, passwd)*/;
-            //String message = user_id + "";
-            intent.putExtra(EXTRA_MESSAGE, user_id);
-            startActivity(intent);
-        }
-        else {
-            dialog();
-        }
+
+        new Thread()
+        {
+            @Override
+            public void run()
+            {
+                String response;
+                EditText eTUsername = (EditText) findViewById(R.id.Loginusername);
+                EditText eTPasswd = (EditText) findViewById(R.id.Loginpasswd);
+                String Username = eTUsername.getText().toString();
+                String passwd = eTPasswd.getText().toString();
+                String info = "user="+Username+"&password="+passwd;
+                response = GetPostUtil.sendGet(
+                        "http://10.187.113.153:80/check_User.php"
+                        , info);
+                // 发送消息通知UI线程更新UI组件
+                //int num = Integer.parseInt(response);
+                //user_id = num;
+                username = Username;
+                if(response.contains("-1"))
+                    handler.sendEmptyMessage(0x121);
+                else {
+                    int num = 0;
+                    int flag = 0;
+                    for(int j = 0; j < response.length(); j++) {
+                        if(response.charAt(j) >='0' && response.charAt(j) <='9'){
+                            num = num*10 + (response.charAt(j) - '0');
+                            flag = 1;
+                        }
+                        else if(flag == 1) break;
+                    }
+                    user_id = num;
+                    handler.sendEmptyMessage(0x123);
+                }
+            }
+        }.start();
     }
     protected void dialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(Login.this);

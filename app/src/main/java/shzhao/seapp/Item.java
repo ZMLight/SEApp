@@ -12,15 +12,20 @@ public class Item {
     private String nickName; // 昵称
     private String content; // 说说
     private String createdAt; // 发布时间
+    private int message_id;
     private ArrayList<Comment> comments = new ArrayList<>(); // 评论
 
 
-    public Item(int portraitId, String nickName, String content, String createdAt) {
+    public Item(int msgId, int portraitId, String nickName, String content, String createdAt, ArrayList<Comment> comments) {
+        this.message_id = msgId;
         this.portraitId = portraitId;
         this.nickName = nickName;
         this.content = content;
         this.createdAt = createdAt;
+        this.comments = comments;
     }
+
+    public void changeCreatedAt(String s) {this.createdAt = s;}
 
     public boolean hasComment() {
         return comments.size() > 0;
@@ -37,6 +42,8 @@ public class Item {
     public String getContent() {
         return content;
     }
+
+    public int getMessageId() { return message_id; }
 
     public String getCreatedAt() {
         return createdAt;
